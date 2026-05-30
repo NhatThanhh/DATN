@@ -1,0 +1,5 @@
+browser-use
+playwright
+pytest
+python-dotenv
+allure-pytest
