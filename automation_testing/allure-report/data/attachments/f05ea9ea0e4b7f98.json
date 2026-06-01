@@ -1,0 +1,12 @@
+{
+    "test_name": "test_login_with_invalid_credentials",
+    "status": "PASSED",
+    "expected_result": "The username wrongusername is not registered on this site. If you are unsure of your username, try your email address instead.",
+    "actual_result": "Error: The username wrongusername is not registered on this site. If you are unsure of your username, try your email address instead.",
+    "executed_at": "2026-05-30 19:00:24",
+    "extra": {
+        "url": "http://practice.automationtesting.in/",
+        "invalid_username": "wrongusername",
+        "verified_by": "Playwright text locator"
+    }
+}

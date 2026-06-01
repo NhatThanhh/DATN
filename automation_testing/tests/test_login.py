@@ -1,128 +1,129 @@
 import os
-from browser_use import Agent
+import pytest
+import allure
+from pages.login_page import LoginPage
 from playwright.async_api import async_playwright, expect
-from utils.test_result_writer import save_test_result
 
+TEST_USERNAME="thanhblink@gmail.com"
+TEST_PASSWORD="Th@nhthanh200"
 
+# # Test Case 1: Login thành công → verify Logout link
+# @pytest.mark.asyncio
+# @allure.feature("Authentication")
+# @allure.story("Valid Login")
+# @allure.title("Verify successful login displays account dashboard")
 # async def test_login_success(browser_session, llm_model, base_url):
-#     username = os.getenv("TEST_USERNAME")
-#     password = os.getenv("TEST_PASSWORD")
+#     username = TEST_USERNAME
+#     password = TEST_PASSWORD
+#     login_page = LoginPage(browser_session, llm_model, base_url)
+#     actual_text = await login_page.login(username, password)
 
-#     if not username or not password:
-#         raise ValueError("Missing TEST_USERNAME or TEST_PASSWORD in .env file")
+#     assert "Logout" in actual_text
 
-#     agent = Agent(
-#         task=f"""
-#             Go to '{base_url}'.
-#             Click on My Account menu.
-#             Enter registered username '{username}' in the username textbox.
-#             Enter password '{password}' in the password textbox.
-#             Click on the Login button.
-#             Wait until the My Account page is loaded after login.
-#             Do not close the browser.
-#         """,
-#         llm=llm_model,
-#         use_vision=True,
-#         browser_session=browser_session,
+# # Test Case 2: Login với username và password sai
+# @pytest.mark.asyncio
+# @allure.feature("Authentication")
+# @allure.story("Invalid Login")
+# @allure.title("Verify invalid username and password error message")
+# async def test_login_invalid(browser_session, llm_model, base_url):
+#     login_page = LoginPage(browser_session, llm_model, base_url)
+#     expected_message = (
+#         "The username wrongusername is not registered on this site. "
+#         "If you are unsure of your username, try your email address instead."
 #     )
+#     actual_text = await login_page.login("wrongusername", "wrong_password_12345", expected_message)
+#     assert expected_message in actual_text
 
-#     result = await agent.run()
-#     print("Agent result:", result)
+# # Test Case 3: Login sai với password sai
+# @pytest.mark.asyncio
+# @allure.feature("Authentication")
+# @allure.story("Invalid Login")
+# @allure.title("Verify invalid password error message")
+# async def test_login_invalid_password(browser_session, llm_model, base_url):
+#     login_page = LoginPage(browser_session, llm_model, base_url)
+#     expected_message = (
+#         f"The password you entered for the username {TEST_USERNAME} is incorrect"
+#     )
+#     actual_text = await login_page.login(TEST_USERNAME, "wrong_password_12345", expected_message)
+#     assert expected_message in actual_text
 
-#     # Lấy CDP URL của browser mà Browser Use đang mở
-#     cdp_url = getattr(browser_session, "cdp_url", None)
+# # Test Case 4: Login sai với username sai
+# @pytest.mark.asyncio
+# @allure.feature("Authentication")
+# @allure.story("Invalid Login")
+# @allure.title("Verify invalid username error message")
+# async def test_login_invalid_username(browser_session, llm_model, base_url):
+#     login_page = LoginPage(browser_session, llm_model, base_url)
+#     expected_message = (
+#         "The username wrongusername is not registered on this site. "
+#         "If you are unsure of your username, try your email address instead."
+#     )
+#     actual_text = await login_page.login("wrongusername", TEST_PASSWORD, expected_message)
+#     assert expected_message in actual_text
 
-#     assert cdp_url is not None, "Cannot get CDP URL from Browser Use session."
+# # Test Case 5: Login với kí tự in hoa username
+# @pytest.mark.asyncio
+# @allure.feature("Authentication")
+# @allure.story("Case-sensitive Login")
+# @allure.title("Verify login fails when username has uppercase letters")
+# async def test_login_case_sensitive_username(browser_session, llm_model, base_url):
+#     login_page = LoginPage(browser_session, llm_model, base_url)
+#     expected_error = "The username Thanhblink@gmail.com is not registered on this site."
+#     actual_text = await login_page.login("Thanhblink@gmail.com", "Th@nhthanh200", expected_error)
+#     assert expected_error in actual_text
 
-#     # Playwright connect vào đúng browser đó để verify bằng locator
-#     async with async_playwright() as p:
-#         pw_browser = await p.chromium.connect_over_cdp(cdp_url)
+# # Test Case 6: Kiểm tra phân biệt in hoa và chữ thường trong password
+# @pytest.mark.asyncio
+# @allure.feature("Authentication")
+# @allure.story("Case-sensitive Login")
+# @allure.title("Verify login fails when password has uppercase letters")
+# async def test_login_case_sensitive_password(browser_session, llm_model, base_url):
+#     login_page = LoginPage(browser_session, llm_model, base_url)
+#     expected_error = f"The password you entered for the username {TEST_USERNAME} is incorrect. Lost your password?"
+#     actual_text = await login_page.login(TEST_USERNAME, "th@nhthanh200", expected_error)
+#     assert expected_error in actual_text
 
-#         try:
-#             assert len(pw_browser.contexts) > 0, "No browser context found from CDP connection."
+# # Test Case 7: Empty username + valid password → Invalid username
+# @pytest.mark.asyncio
+# @allure.feature("Authentication")
+# @allure.story("Empty Username with valid password")
+# @allure.title("Verify error for empty username")
+# async def test_empty_username_valid_password(browser_session, llm_model, base_url):
+#     login_page = LoginPage(browser_session, llm_model, base_url)
+#     expected_error = "Username is required."
+#     actual_text = await login_page.login("", TEST_PASSWORD, expected_error)
+#     assert expected_error in actual_text
 
-#             context = pw_browser.contexts[0]
-
-#             assert len(context.pages) > 0, "No page found in browser context."
-
-#             page = context.pages[-1]
-
-#             await page.wait_for_load_state("domcontentloaded")
-
-#             logout_link = page.locator("a:has-text('Logout')")
-
-#             await expect(logout_link).to_be_visible(timeout=10000)
-
-#         finally:
-#             await pw_browser.close()
-
-
-# Login with invalid username and invalid pass
-async def test_login_with_invalid_credentials(browser_session, llm_model, base_url):
-    invalid_username = "wrongusername"
-    invalid_password = "wrong_password_12345"
-
-    expected_message = (
-        "The username wrongusername is not registered on this site. "
-        "If you are unsure of your username, try your email address instead."
-    )
-
-    agent = Agent(
-        task=f"""
-            Go to '{base_url}'.
-            Click on My Account menu.
-            Enter incorrect username '{invalid_username}' in the username textbox.
-            Enter incorrect password '{invalid_password}' in the password textbox.
-            Click on the Login button.
-            Wait until the login error message is displayed.
-            Do not close the browser.
-        """,
-        llm=llm_model,
-        use_vision=True,
-        browser_session=browser_session,
-    )
-
-    await agent.run()
-
+# Test Case 8: Logout + back button → user không còn đăng nhập
+@pytest.mark.asyncio
+@allure.feature("Authentication")
+@allure.story("Logout and Back Button")
+@allure.title("Verify user cannot access account after logout and back")
+async def test_logout_back_behavior(browser_session, llm_model, base_url):
+    login_page = LoginPage(browser_session, llm_model, base_url)
+    
+    # login thành công
+    await login_page.login(TEST_USERNAME, TEST_PASSWORD)
+    
+    # logout và nhấn back
     async with async_playwright() as p:
         pw_browser = await p.chromium.connect_over_cdp(browser_session.cdp_url)
-
         try:
             page = pw_browser.contexts[0].pages[-1]
 
-            error_message = page.locator(f"text={expected_message}")
+            # Click Logout
+            await page.locator("text=Logout").click()
 
-            await expect(error_message).to_be_visible(timeout=10000)
+            # Nhấn back
+            await page.go_back()
 
-            actual_result = await error_message.inner_text()
+            # Đợi page load và kiểm tra nút Logout không còn hiển thị
+            logout_locator = page.locator("text=Logout")
+            await expect(logout_locator).not_to_be_visible(timeout=10000)
 
-            save_test_result(
-                test_name="test_login_with_invalid_credentials",
-                status="PASSED",
-                expected_result=expected_message,
-                actual_result=actual_result,
-                file_name="test_login_with_invalid_credentials.json",
-                extra={
-                    "url": base_url,
-                    "invalid_username": invalid_username,
-                    "verified_by": "Playwright text locator"
-                }
-            )
-
-        except Exception as e:
-            save_test_result(
-                test_name="test_login_with_invalid_credentials",
-                status="FAILED",
-                expected_result=expected_message,
-                actual_result=str(e),
-                file_name="test_login_with_invalid_credentials.json",
-                extra={
-                    "url": base_url,
-                    "invalid_username": invalid_username,
-                    "verified_by": "Playwright text locator"
-                }
-            )
-            raise
+            # Chụp screenshot attach vào Allure
+            screenshot = await page.screenshot(full_page=True)
+            allure.attach(screenshot, name="Back After Logout", attachment_type=allure.attachment_type.PNG)
 
         finally:
             await pw_browser.close()
